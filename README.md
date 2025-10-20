@@ -99,6 +99,8 @@ A production full-stack AI chatbot combining Python Gradio frontend with Java Sp
 | **Backend** | Java 17, Spring Boot 3.5.6, Spring Data JPA |
 | **Database** | MySQL 8.0 (AWS RDS) |
 | **AI** | OpenAI GPT-4o-mini |
+| **Analytics** | Chart.js, Plotly, Gradio (dual dashboard options) |
+| **CI/CD** | GitHub Actions, AWS CLI |
 | **Hosting** | Hugging Face Spaces (frontend), AWS Elastic Beanstalk (backend) |
 | **Infrastructure** | AWS EC2, RDS, S3, Application Load Balancer |
 
@@ -108,11 +110,14 @@ A production full-stack AI chatbot combining Python Gradio frontend with Java Sp
 - **Conversation Persistence**: All messages saved to MySQL database
 - **Contact Management**: Captures user emails and details automatically
 - **Unknown Question Logging**: Tracks what AI can't answer for improvement
+- **Analytics Dashboard**: Real-time metrics visualization with Chart.js (DAU, conversion rate, top questions)
+- **CI/CD Pipeline**: Automated deployment via GitHub Actions to AWS Elastic Beanstalk
 - **Hybrid Architecture**: Python for AI/UI, Java for data persistence
 - **Production Ready**: Deployed on AWS with auto-healing and backups
 
 ## API Endpoints
 
+### Core Endpoints
 ```bash
 # Health check
 GET /api/test/ping
@@ -133,6 +138,26 @@ POST /api/questions/unknown
 Body: {"question": "Question text"}
 ```
 
+### Analytics Endpoints
+```bash
+# Overview metrics (total users, conversations, conversion rate)
+GET /api/analytics/overview
+
+# Daily active users (configurable time range)
+GET /api/analytics/daily-active-users?days=30
+
+# Top N most frequently asked questions
+GET /api/analytics/top-questions?limit=10
+
+# Email capture conversion rate
+GET /api/analytics/conversion-rate
+
+# Engagement metrics for specific period
+GET /api/analytics/engagement?days=7
+```
+
+**Analytics Dashboard**: Access at `http://localhost:8080/analytics.html` (or `/analytics_dashboard.py` for Gradio version)
+
 ## Quick Setup
 
 **Frontend (Local)**:
@@ -152,15 +177,40 @@ cd doitou
 
 **Deploy to Production**:
 ```bash
-# Backend to AWS
+# Backend to AWS (manual)
 ./deploy.sh
+
+# Or use CI/CD (automatic on push to main)
+git push origin main
 
 # Frontend to Hugging Face
 python deploy_to_hf.py
 ```
 
+## CI/CD Pipeline
+
+Automated deployment via GitHub Actions on every push to `main` branch:
+
+**Workflow Steps:**
+1. Build Maven project with Java 17
+2. Package Spring Boot JAR
+3. Upload to AWS S3
+4. Create Elastic Beanstalk version
+5. Deploy to production environment
+6. Health check validation
+
+**Configuration**: `.github/workflows/deploy.yml`
+
+**Required Secrets** (set in GitHub repo settings):
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+
+**Manual Trigger**: Use "Actions" tab in GitHub or `workflow_dispatch` event
+
 ---
 
 **Live Application**: [https://huggingface.co/spaces/Doitou/career_conversation](https://huggingface.co/spaces/Doitou/career_conversation)
 
-**Backend API**: [http://resume-chatbot-env-prod.eba-cqqaf2qn.us-east-1.elasticbeanstalk.com/api/test/ping](http://resume-chatbot-env-prod.eba-cqqaf2qn.us-east-1.elasticbeanstalk.com/api/test/ping)
+**Backend API**: [http://resume-chatbot-env-v5.eba-cqqaf2qn.us-east-1.elasticbeanstalk.com/api/test/ping](http://resume-chatbot-env-v5.eba-cqqaf2qn.us-east-1.elasticbeanstalk.com/api/test/ping)
+
+**Analytics Dashboard**: Available in production at `/analytics.html` endpoint
