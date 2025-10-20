@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-label {
+            color: #6b7280;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            color: #111827;
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        .stat-icon {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #111827;
+        }
+
+        .controls {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-group label {
+            font-size: 0.875rem;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .control-group select,
+        .control-group input {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 0.875rem;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #5568d3;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: white;
+            font-size: 1.125rem;
+        }
+
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #dc2626;
+        }
+
+        canvas {
+            max-height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Analytics Dashboard</h1>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="dauDays">DAU Days:</label>
+                <select id="dauDays">
+                    <option value="7">7 days</option>
+                    <option value="14">14 days</option>
+                    <option value="30" selected>30 days</option>
+                    <option value="60">60 days</option>
+                    <option value="90">90 days</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="topQLimit">Top Questions:</label>
+                <select id="topQLimit">
+                    <option value="5">Top 5</option>
+                    <option value="10" selected>Top 10</option>
+                    <option value="15">Top 15</option>
+                    <option value="20">Top 20</option>
+                </select>
+            </div>
+            <button onclick="refreshDashboard()">🔄 Refresh</button>
+        </div>
+
+        <div id="error" class="error" style="display: none;"></div>
+
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-label">Total Users</div>
+                <div class="stat-value" id="totalUsers">--</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">💬</div>
+                <div class="stat-label">Conversations</div>
+                <div class="stat-value" id="totalConversations">--</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📧</div>
+                <div class="stat-label">Email Captures</div>
+                <div class="stat-value" id="emailCaptures">--</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📈</div>
+                <div class="stat-label">Conversion Rate</div>
+                <div class="stat-value" id="conversionRate">--</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⏱️</div>
+                <div class="stat-label">Avg Session (min)</div>
+                <div class="stat-value" id="avgSession">--</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">❓</div>
+                <div class="stat-label">Unknown Questions</div>
+                <div class="stat-value" id="unknownQuestions">--</div>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <h2 class="chart-title">Daily Active Users & Messages</h2>
+            <canvas id="dauChart"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <h2 class="chart-title">Top Questions</h2>
+            <canvas id="questionsChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        let dauChart = null;
+        let questionsChart = null;
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = '❌ ' + message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        async function fetchAPI(endpoint) {
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                const json = await response.json();
+                return json.data;
+            } catch (error) {
+                showError(`Failed to fetch ${endpoint}: ${error.message}`);
+                return null;
+            }
+        }
+
+        async function loadOverview() {
+            const data = await fetchAPI('/api/analytics/overview');
+            if (!data) return;
+
+            document.getElementById('totalUsers').textContent = data.totalUsers.toLocaleString();
+            document.getElementById('totalConversations').textContent = data.totalConversations.toLocaleString();
+            document.getElementById('emailCaptures').textContent = data.emailCaptures.toLocaleString();
+            document.getElementById('avgSession').textContent = data.averageSessionLength.toFixed(2);
+            document.getElementById('unknownQuestions').textContent = data.unknownQuestions.toLocaleString();
+        }
+
+        async function loadConversionRate() {
+            const data = await fetchAPI('/api/analytics/conversion-rate');
+            if (!data) return;
+
+            document.getElementById('conversionRate').textContent = data.conversionRate.toFixed(1) + '%';
+        }
+
+        async function loadDAUChart() {
+            const days = document.getElementById('dauDays').value;
+            const data = await fetchAPI(`/api/analytics/daily-active-users?days=${days}`);
+            if (!data) return;
+
+            const dates = data.map(d => d.date);
+            const activeUsers = data.map(d => d.activeUsers);
+            const totalMessages = data.map(d => d.totalMessages);
+
+            const ctx = document.getElementById('dauChart').getContext('2d');
+
+            if (dauChart) {
+                dauChart.destroy();
+            }
+
+            dauChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [
+                        {
+                            label: 'Active Users',
+                            data: activeUsers,
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            yAxisID: 'y',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Messages',
+                            data: totalMessages,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            yAxisID: 'y1',
+                            type: 'bar',
+                            order: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Active Users'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Messages'
+                            },
+                            grid: {
+                                drawOnChartArea: false,
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        async function loadQuestionsChart() {
+            const limit = document.getElementById('topQLimit').value;
+            const data = await fetchAPI(`/api/analytics/top-questions?limit=${limit}`);
+            if (!data || data.length === 0) {
+                if (questionsChart) {
+                    questionsChart.destroy();
+                    questionsChart = null;
+                }
+                return;
+            }
+
+            const questions = data.map(d => {
+                const q = d.question;
+                return q.length > 60 ? q.substring(0, 57) + '...' : q;
+            });
+            const counts = data.map(d => d.count);
+
+            const ctx = document.getElementById('questionsChart').getContext('2d');
+
+            if (questionsChart) {
+                questionsChart.destroy();
+            }
+
+            questionsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: questions,
+                    datasets: [{
+                        label: 'Frequency',
+                        data: counts,
+                        backgroundColor: '#8b5cf6',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        async function refreshDashboard() {
+            await Promise.all([
+                loadOverview(),
+                loadConversionRate(),
+                loadDAUChart(),
+                loadQuestionsChart()
+            ]);
+        }
+
+        // Event listeners
+        document.getElementById('dauDays').addEventListener('change', loadDAUChart);
+        document.getElementById('topQLimit').addEventListener('change', loadQuestionsChart);
+
+        // Initial load
+        refreshDashboard();
+
+        // Auto-refresh every 60 seconds
+        setInterval(refreshDashboard, 60000);
+    </script>
+</body>
+</html>
