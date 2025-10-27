@@ -25,9 +25,9 @@ public class RateLimitConfig {
     public BucketConfiguration bucketConfiguration() {
         // Allow 3 requests per minute per IP (fixed window - resets every minute)
         Bandwidth limit = Bandwidth.builder()
-            .capacity(3)
-            .refillIntervally(3, Duration.ofMinutes(1))
-            .initialTokens(3)
+            .capacity(20)
+            .refillIntervally(20, Duration.ofMinutes(1))
+            .initialTokens(20)
             .build();
 
         return BucketConfiguration.builder()
