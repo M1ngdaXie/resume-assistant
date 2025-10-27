@@ -34,6 +34,36 @@ public class ChatController {
         }
     }
 
+    @PostMapping("/save-user")
+    public ResponseEntity<ApiResponse<Conversation>> saveUserMessage(@RequestBody ChatRequest request) {
+        try {
+            Conversation conversation = chatService.saveConversation(
+                request.getUserId(),
+                "user",
+                request.getMessage()
+            );
+            return ResponseEntity.ok(ApiResponse.success("Message saved successfully", conversation));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error("Failed to save message: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/save-assistant")
+    public ResponseEntity<ApiResponse<Conversation>> saveAssistantMessage(@RequestBody ChatRequest request) {
+        try {
+            Conversation conversation = chatService.saveConversation(
+                request.getUserId(),
+                "assistant",
+                request.getMessage()
+            );
+            return ResponseEntity.ok(ApiResponse.success("Message saved successfully", conversation));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error("Failed to save message: " + e.getMessage()));
+        }
+    }
+
     @GetMapping("/history/{userId}")
     public ResponseEntity<ApiResponse<List<Conversation>>> getHistory(@PathVariable String userId) {
         try {
