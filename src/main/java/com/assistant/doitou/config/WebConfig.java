@@ -15,7 +15,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(rateLimitInterceptor)
-            .addPathPatterns("/api/**")
-            .excludePathPatterns("/api/test/**", "/api/chat/save-assistant"); // Exclude test endpoints and assistant saves from rate limiting
+            .addPathPatterns("/api/chat/save-user")  // Only rate limit user chat messages
+            .excludePathPatterns("/api/test/**");
     }
 }
